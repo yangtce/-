@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="shortcut icon" href="https://cdn.jsdelivr.net/gh/fromann/CDN@main/img/logo.ico">
+  <title>致麦麦&#10084;&#65039;</title>
+  <script src="https://cdn.jsdelivr.net/gh/zyoushuo/Blog/hexo/js/mouse_slide.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/zyoushuo/Blog/hexo/js/clicklove.js"></script>
+  <style type="text/css">
+    html, body {
+      height: 100%;
+      padding: 0;
+      margin: 0;
+      background: #000;
+      overflow: hidden;
+    }
+    canvas {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+    }
+    .namebox{
+      color: #fff;
+      position: absolute;   
+      top: 50%;   
+      left: 50%;   
+      -webkit-transform: translate(-50%, -50%);   
+      -moz-transform: translate(-50%, -50%);   
+      -ms-transform: translate(-50%, -50%);   
+      -o-transform: translate(-50%, -50%);   
+      transform: translate(-50%, -50%);   
+      z-index: 5;
+      text-align: center;
+    }
+    .namebox h1{
+      margin: 0 auto;
+    }
+
+    /* ========== 信封场景 ========== */
+    #envelope-scene {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      transition: opacity 0.8s ease;
+    }
+    #envelope-scene.fade-out {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    /* 信封容器 */
+    .envelope-wrapper {
+      perspective: 1000px;
+      cursor: pointer;
+      animation: floatEnvelope 3s ease-in-out infinite;
+    }
+    @keyframes floatEnvelope {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-15px); }
+    }
+
+    .envelope {
+      width: 300px;
+      height: 200px;
+      position: relative;
+      transform-style: preserve-3d;
+    }
+
+    /* 信封主体 */
+    .envelope-body {
+      width: 300px;
+      height: 200px;
+      background: linear-gradient(180deg, #f5e6ca 0%, #e8d5b0 100%);
+      border-radius: 8px;
+      position: relative;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+      overflow: hidden;
+      z-index: 3;
+    }
+
+    /* 信封底部三角 */
+    .envelope-body::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0;
+      width: 0; height: 0;
+      border-left: 150px solid transparent;
+      border-right: 150px solid transparent;
+      border-bottom: 120px solid #d4b896;
+    }
+
+    /* 信封盖子 */
+    .envelope-flap {
+      width: 300px;
+      height: 150px;
+      background: linear-gradient(180deg, #e8cfa0 0%, #d4b896 100%);
+      position: absolute;
+      top: 0; left: 0;
+      transform-origin: top center;
+      transition: transform 0.8s ease;
+      z-index: 4;
+      clip-path: polygon(0 0, 50% 70%, 100% 0);
+    }
+    .envelope-flap::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: linear-gradient(180deg, #deb887 0%, #c8a87a 100%);
+      clip-path: polygon(0 0, 50% 70%, 100% 0);
+    }
+
+    /* 信纸 */
+    .letter {
+      width: 260px;
+      height: 180px;
+      background: #fffef5;
+      position: absolute;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      border-radius: 4px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      transition: transform 0.8s ease 0.3s;
+      z-index: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .letter-content {
+      color: #8b6914;
+      font-size: 14px;
+      text-align: center;
+      font-family: 'Georgia', serif;
+      line-height: 1.8;
+    }
+
+    /* 爱心印章 */
+    .seal {
+      position: absolute;
+      bottom: -15px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 50px;
+      height: 50px;
+      background: radial-gradient(circle, #ff4466 40%, #cc2244 100%);
+      border-radius: 50%;
+      z-index: 5;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      box-shadow: 0 2px 10px rgba(255,68,102,0.5);
+      animation: pulseSeal 2s ease-in-out infinite;
+    }
+    .seal::after {
+      content: '❤';
+      color: #fff;
+      font-size: 22px;
+    }
+    @keyframes pulseSeal {
+      0%, 100% { transform: translateX(-50%) scale(1); }
+      50% { transform: translateX(-50%) scale(1.1); }
+    }
+
+    /* 信封打开状态 */
+    .envelope.opened .envelope-flap {
+      transform: rotateX(180deg);
+    }
+    .envelope.opened .letter {
+      transform: translateX(-50%) translateY(-100px);
+      z-index: 10;
+    }
+
+    /* 点击提示文字 */
+    .click-hint {
+      position: absolute;
+      bottom: -60px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: rgba(255,255,255,0.7);
+      font-size: 14px;
+      white-space: nowrap;
+      animation: blink 1.5s ease-in-out infinite;
+    }
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    /* ========== 弹窗通用样式 ========== */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.7);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 2000;
+      animation: fadeIn 0.5s ease;
+    }
+    .modal-overlay.active {
+      display: flex;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .modal-box {
+      background: linear-gradient(145deg, #fff0f5, #ffe4e9);
+      border-radius: 20px;
+      padding: 40px 35px;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(255, 105, 180, 0.3), 0 0 80px rgba(255, 182, 193, 0.2);
+      max-width: 400px;
+      width: 85%;
+      animation: popIn 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+      position: relative;
+      overflow: hidden;
+    }
+    .modal-box::before {
+      content: '';
+      position: absolute;
+      top: -50%; left: -50%;
+      width: 200%; height: 200%;
+      background: radial-gradient(circle, rgba(255,182,193,0.1) 0%, transparent 60%);
+      animation: shimmer 3s ease-in-out infinite;
+    }
+    @keyframes popIn {
+      from { transform: scale(0.5); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+    @keyframes shimmer {
+      0%, 100% { transform: rotate(0deg); }
+      50% { transform: rotate(180deg); }
+    }
+
+    .modal-box h2 {
+      color: #c2185b;
+      font-size: 22px;
+      margin: 0 0 25px 0;
+      font-family: 'Microsoft YaHei', sans-serif;
+      position: relative;
+      z-index: 1;
+    }
+
+    .modal-box input {
+      width: 70%;
+      padding: 10px 15px;
+      border: 2px solid #ffb6c1;
+      border-radius: 25px;
+      font-size: 16px;
+      text-align: center;
+      outline: none;
+      background: rgba(255,255,255,0.8);
+      color: #c2185b;
+      font-family: 'Microsoft YaHei', sans-serif;
+      margin-bottom: 20px;
+      position: relative;
+      z-index: 1;
+      transition: border-color 0.3s;
+    }
+    .modal-box input:focus {
+      border-color: #ff69b4;
+      box-shadow: 0 0 15px rgba(255,105,180,0.3);
+    }
+    .modal-box input::placeholder {
+      color: #ffb6c1;
+    }
+
+    .modal-btn {
+      padding: 10px 35px;
+      border: none;
+      border-radius: 25px;
+      font-size: 16px;
+      cursor: pointer;
+      font-family: 'Microsoft YaHei', sans-serif;
+      transition: all 0.3s ease;
+      position: relative;
+      z-index: 1;
+      margin: 5px;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #ff69b4, #ff1493);
+      color: #fff;
+      box-shadow: 0 4px 15px rgba(255,20,147,0.4);
+    }
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(255,20,147,0.6);
+    }
+    .btn-exit {
+      background: linear-gradient(135deg, #ccc, #999);
+      color: #fff;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+    .btn-exit:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+    }
+
+    /* 错误弹窗 */
+    .modal-box.error {
+      background: linear-gradient(145deg, #fff5f5, #ffe0e0);
+    }
+    .modal-box.error h2 {
+      color: #e53935;
+    }
+
+    /* 星星装饰 */
+    .stars {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .star {
+      position: absolute;
+      width: 4px; height: 4px;
+      background: #fff;
+      border-radius: 50%;
+      animation: twinkle 2s ease-in-out infinite;
+    }
+    @keyframes twinkle {
+      0%, 100% { opacity: 0.3; transform: scale(1); }
+      50% { opacity: 1; transform: scale(1.5); }
+    }
+
+    /* 主题内容隐藏 */
+    #main-content {
+      display: none;
+    }
+    #main-content.show {
+      display: block;
+    }
+
+    /* 填空下划线样式 */
+    .blank-underline {
+      display: inline-block;
+      width: 80px;
+      border-bottom: 3px solid #ff69b4;
+      margin: 0 5px;
+      position: relative;
+      top: -2px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- 信封场景 -->
+<div id="envelope-scene">
+  <div class="stars" id="stars"></div>
+  <div class="envelope-wrapper" onclick="openEnvelope()">
+    <div class="envelope" id="envelope">
+      <div class="envelope-flap"></div>
+      <div class="letter">
+        <div class="letter-content">有一封信<br>想寄给你 ✉️</div>
+      </div>
+      <div class="envelope-body"></div>
+      <div class="seal"></div>
+    </div>
+    <div class="click-hint">✨ 点击拆开信封 ✨</div>
+  </div>
+</div>
+
+<!-- 第一个弹窗：你是呆呆南吗？ -->
+<div class="modal-overlay" id="modal1">
+  <div class="modal-box">
+    <h2>🤔 你是呆呆南吗？</h2>
+    <div>
+      <button class="modal-btn btn-primary" onclick="confirmDaidaNan()">是 ❤️</button>
+      <button class="modal-btn btn-exit" onclick="exitPage()">退出</button>
+    </div>
+  </div>
+</div>
+
+<!-- 第二个弹窗：你是□□的妹妹宝宝？ -->
+<div class="modal-overlay" id="modal2">
+  <div class="modal-box">
+    <h2>你是<span class="blank-underline"></span>的妹妹宝宝？</h2>
+    <input type="text" id="answerInput" placeholder="请输入答案..." onkeydown="if(event.key==='Enter')checkAnswer()">
+    <div>
+      <button class="modal-btn btn-primary" onclick="checkAnswer()">确定 💕</button>
+    </div>
+  </div>
+</div>
+
+<!-- 错误弹窗：你真笨！ -->
+<div class="modal-overlay" id="modal3">
+  <div class="modal-box error">
+    <h2>😤 你真笨！<br>再好好想想～</h2>
+    <button class="modal-btn btn-primary" onclick="tryAgain()">再试一次 🔄</button>
+  </div>
+</div>
+
+<!-- 主体内容（原始心形粒子动画） -->
+<div id="main-content">
+  <canvas id="pinkboard"></canvas>
+  <div class="namebox">
+    <h1>&nbsp;你&nbsp; 呆&nbsp; 呆&nbsp; 的&nbsp;</h1>
+    <h1>&nbsp;</h1>
+  </div>
+</div>
+
+<script>
+  // ========== 星星背景 ==========
+  (function() {
+    var starsContainer = document.getElementById('stars');
+    for (var i = 0; i < 50; i++) {
+      var star = document.createElement('div');
+      star.className = 'star';
+      star.style.left = Math.random() * 100 + '%';
+      star.style.top = Math.random() * 100 + '%';
+      star.style.animationDelay = Math.random() * 2 + 's';
+      star.style.width = (Math.random() * 3 + 2) + 'px';
+      star.style.height = star.style.width;
+      starsContainer.appendChild(star);
+    }
+  })();
+
+  // ========== 信封打开 ==========
+  var envelopeOpened = false;
+  function openEnvelope() {
+    if (envelopeOpened) return;
+    envelopeOpened = true;
+    var envelope = document.getElementById('envelope');
+    envelope.classList.add('opened');
+    
+    // 打开信封后，1.5秒后显示第一个弹窗
+    setTimeout(function() {
+      var scene = document.getElementById('envelope-scene');
+      scene.classList.add('fade-out');
+      setTimeout(function() {
+        scene.style.display = 'none';
+        showModal('modal1');
+      }, 800);
+    }, 1500);
+  }
+
+  // ========== 弹窗控制 ==========
+  function showModal(id) {
+    document.getElementById(id).classList.add('active');
+  }
+  function hideModal(id) {
+    document.getElementById(id).classList.remove('active');
+  }
+
+  // ========== 第一个弹窗：确认是呆呆南 ==========
+  function confirmDaidaNan() {
+    hideModal('modal1');
+    setTimeout(function() {
+      showModal('modal2');
+      document.getElementById('answerInput').focus();
+    }, 400);
+  }
+
+  // ========== 退出页面 ==========
+  function exitPage() {
+    window.opener = null;
+    window.open('', '_self');
+    window.close();
+    // 如果浏览器阻止关闭，则显示空白页
+    document.body.innerHTML = '<div style="display:flex;justify-content:center;align-items:center;height:100vh;color:#999;font-size:24px;font-family:Microsoft YaHei,sans-serif;">再见啦～ 💨</div>';
+  }
+
+  // ========== 检查答案 ==========
+  function checkAnswer() {
+    var input = document.getElementById('answerInput');
+    var answer = input.value.trim();
+    if (answer === '哥哥') {
+      hideModal('modal2');
+      setTimeout(function() {
+        showMainContent();
+      }, 500);
+    } else {
+      hideModal('modal2');
+      setTimeout(function() {
+        showModal('modal3');
+      }, 400);
+    }
+  }
+
+  // ========== 重新尝试 ==========
+  function tryAgain() {
+    hideModal('modal3');
+    document.getElementById('answerInput').value = '';
+    setTimeout(function() {
+      showModal('modal2');
+      document.getElementById('answerInput').focus();
+    }, 400);
+  }
+
+  // ========== 展示主体内容 ==========
+  function showMainContent() {
+    var mainContent = document.getElementById('main-content');
+    mainContent.classList.add('show');
+    // 启动心形粒子动画
+    startHeartAnimation();
+  }
+
+  // ========== 心形粒子动画（原始代码） ==========
+  function startHeartAnimation() {
+    var settings = {
+      particles: {
+        length: 500,
+        duration: 2,
+        velocity: 100,
+        effect: -0.75,
+        size: 30,
+      },
+    };
+
+    (function(){
+      var b=0;
+      var c=["ms","moz","webkit","o"];
+      for(var a=0;a<c.length&&!window.requestAnimationFrame;++a){
+        window.requestAnimationFrame=window[c[a]+"RequestAnimationFrame"];
+        window.cancelAnimationFrame=window[c[a]+"CancelAnimationFrame"]||window[c[a]+"CancelRequestAnimationFrame"]
+      }
+      if(!window.requestAnimationFrame){
+        window.requestAnimationFrame=function(h,e){
+          var d=new Date().getTime();
+          var f=Math.max(0,16-(d-b));
+          var g=window.setTimeout(function(){h(d+f)},f);b=d+f;return g
+        }
+      }
+      if(!window.cancelAnimationFrame){
+        window.cancelAnimationFrame=function(d){clearTimeout(d)}
+      }
+    })();
+
+    var Point = (function() {
+      function Point(x, y) {
+        this.x = (typeof x !== 'undefined') ? x : 0;
+        this.y = (typeof y !== 'undefined') ? y : 0;
+      }
+      Point.prototype.clone = function() {
+        return new Point(this.x, this.y);
+      };
+      Point.prototype.length = function(length) {
+        if (typeof length == 'undefined')
+          return Math.sqrt(this.x * this.x + this.y * this.y);
+        this.normalize();
+        this.x *= length;
+        this.y *= length;
+        return this;
+      };
+      Point.prototype.normalize = function() {
+        var length = this.length();
+        this.x /= length;
+        this.y /= length;
+        return this;
+      };
+      return Point;
+    })();
+
+    var Particle = (function() {
+      function Particle() {
+        this.position = new Point();
+        this.velocity = new Point();
+        this.acceleration = new Point();
+        this.age = 0;
+      }
+      Particle.prototype.initialize = function(x, y, dx, dy) {
+        this.position.x = x;
+        this.position.y = y;
+        this.velocity.x = dx;
+        this.velocity.y = dy;
+        this.acceleration.x = dx * settings.particles.effect;
+        this.acceleration.y = dy * settings.particles.effect;
+        this.age = 0;
+      };
+      Particle.prototype.update = function(deltaTime) {
+        this.position.x += this.velocity.x * deltaTime;
+        this.position.y += this.velocity.y * deltaTime;
+        this.velocity.x += this.acceleration.x * deltaTime;
+        this.velocity.y += this.acceleration.y * deltaTime;
+        this.age += deltaTime;
+      };
+      Particle.prototype.draw = function(context, image) {
+        function ease(t) {
+          return (--t) * t * t + 1;
+        }
+        var size = image.width * ease(this.age / settings.particles.duration);
+        context.globalAlpha = 1 - this.age / settings.particles.duration;
+        context.drawImage(image, this.position.x - size / 2, this.position.y - size / 2, size, size);
+      };
+      return Particle;
+    })();
+
+    var ParticlePool = (function() {
+      var particles,
+          firstActive = 0,
+          firstFree = 0,
+          duration = settings.particles.duration;
+      function ParticlePool(length) {
+        particles = new Array(length);
+        for (var i = 0; i < particles.length; i++)
+          particles[i] = new Particle();
+      }
+      ParticlePool.prototype.add = function(x, y, dx, dy) {
+        particles[firstFree].initialize(x, y, dx, dy);
+        firstFree++;
+        if (firstFree == particles.length) firstFree = 0;
+        if (firstActive == firstFree) firstActive++;
+        if (firstActive == particles.length) firstActive = 0;
+      };
+      ParticlePool.prototype.update = function(deltaTime) {
+        var i;
+        if (firstActive < firstFree) {
+          for (i = firstActive; i < firstFree; i++)
+            particles[i].update(deltaTime);
+        }
+        if (firstFree < firstActive) {
+          for (i = firstActive; i < particles.length; i++)
+            particles[i].update(deltaTime);
+          for (i = 0; i < firstFree; i++)
+            particles[i].update(deltaTime);
+        }
+        while (particles[firstActive].age >= duration && firstActive != firstFree) {
+          firstActive++;
+          if (firstActive == particles.length) firstActive = 0;
+        }
+      };
+      ParticlePool.prototype.draw = function(context, image) {
+        if (firstActive < firstFree) {
+          for (i = firstActive; i < firstFree; i++)
+            particles[i].draw(context, image);
+        }
+        if (firstFree < firstActive) {
+          for (i = firstActive; i < particles.length; i++)
+            particles[i].draw(context, image);
+          for (i = 0; i < firstFree; i++)
+            particles[i].draw(context, image);
+        }
+      };
+      return ParticlePool;
+    })();
+
+    (function(canvas) {
+      var context = canvas.getContext('2d'),
+          particles = new ParticlePool(settings.particles.length),
+          particleRate = settings.particles.length / settings.particles.duration,
+          time;
+
+      function pointOnHeart(t) {
+        return new Point(
+          160 * Math.pow(Math.sin(t), 3),
+          130 * Math.cos(t) - 50 * Math.cos(2 * t) - 20 * Math.cos(3 * t) - 10 * Math.cos(4 * t) + 25
+        );
+      }
+
+      var image = (function() {
+        var canvas = document.createElement('canvas'),
+            context = canvas.getContext('2d');
+        canvas.width = settings.particles.size;
+        canvas.height = settings.particles.size;
+        function to(t) {
+          var point = pointOnHeart(t);
+          point.x = settings.particles.size / 2 + point.x * settings.particles.size / 350;
+          point.y = settings.particles.size / 2 - point.y * settings.particles.size / 350;
+          return point;
+        }
+        context.beginPath();
+        var t = -Math.PI;
+        var point = to(t);
+        context.moveTo(point.x, point.y);
+        while (t < Math.PI) {
+          t += 0.01;
+          point = to(t);
+          context.lineTo(point.x, point.y);
+        }
+        context.closePath();
+        context.fillStyle = '#ff30c5';
+        context.fill();
+        var image = new Image();
+        image.src = canvas.toDataURL();
+        return image;
+      })();
+
+      function render() {
+        requestAnimationFrame(render);
+        var newTime = new Date().getTime() / 1000,
+            deltaTime = newTime - (time || newTime);
+        time = newTime;
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        var amount = particleRate * deltaTime;
+        for (var i = 0; i < amount; i++) {
+          var pos = pointOnHeart(Math.PI - 2 * Math.PI * Math.random());
+          var dir = pos.clone().length(settings.particles.velocity);
+          particles.add(canvas.width / 2 + pos.x, canvas.height / 2 - pos.y, dir.x, -dir.y);
+        }
+        particles.update(deltaTime);
+        particles.draw(context, image);
+      }
+
+      function onResize() {
+        canvas.width = canvas.clientWidth;
+        canvas.height = canvas.clientHeight;
+      }
+      window.onresize = onResize;
+      setTimeout(function() {
+        onResize();
+        render();
+      }, 10);
+    })(document.getElementById('pinkboard'));
+  }
+</script>
+</body>
+</html>
